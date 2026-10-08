@@ -21,7 +21,9 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-The app currently reads bundled sample data from `web/data/sample-data.json`. No accounts are needed to run it.
+The app starts on bundled sample data from `web/data/sample-data.json`. No accounts are needed to run it.
+
+**Upload your own sheets** under Data › Upload a sheet: sales, attendance, receivables ageing or joiners and leavers, from `.xlsx` or `.csv` (Tally reports exported to Excel work). The app guesses which column is which, you confirm, it shows what it will import and any rows it had to skip, and the upload then replaces the sample data for that table. Uploads are kept in `web/.data/imports.json` until the database is connected. That suits a local demo or a single pilot machine, not hosting. An attendance starter sheet is at `web/public/templates/attendance-template.xlsx` (regenerate with `node scripts/make-templates.mjs`).
 
 ## Rebuild the sample data
 
