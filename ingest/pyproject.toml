@@ -1,0 +1,18 @@
+[project]
+name = "businessdesk-ingest"
+version = "0.1.0"
+description = "Turns customer spreadsheets and exports into Business Desk's shared tables"
+requires-python = ">=3.10"
+dependencies = ["pandas>=2.0", "openpyxl>=3.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+businessdesk-ingest = "businessdesk_ingest.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["businessdesk_ingest*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
