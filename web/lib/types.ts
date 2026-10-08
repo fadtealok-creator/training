@@ -7,10 +7,11 @@ export type PnlRow = { month: string; region: string; metric: "revenue" | "expen
 export type AgingRow = { month: string; region: string; bucket: Bucket; amount: number };
 export type PeopleRow = { month: string; region: string; hires: number; exits: number };
 export type SatisfactionRow = { year: number; region: string; score: number; target: number };
+export type AttendanceRow = { date: string; employee_id: string; name: string; branch: string; status: "P" | "A" | "L" | "H"; in_time: string | null; out_time: string | null };
 export type Bucket = "0-30" | "31-60" | "61-90" | "90+";
 export const BUCKETS: Bucket[] = ["0-30", "31-60", "61-90", "90+"];
 
-export type SourceInfo = { label: string; rows: number; warnings: string[] };
+export type SourceInfo = { label: string; rows: number; warnings: string[]; importedAt?: string };
 export type Dataset = {
   sources: Record<keyof Dataset["tables"], SourceInfo>;
   tables: {
@@ -19,6 +20,7 @@ export type Dataset = {
     receivables_aging: AgingRow[];
     people_moves: PeopleRow[];
     satisfaction: SatisfactionRow[];
+    attendance: AttendanceRow[];
   };
 };
 export type TableName = keyof Dataset["tables"];

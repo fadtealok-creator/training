@@ -32,16 +32,17 @@ export function Bars({ data, x, series, stacked, horizontal, money: isMoney = tr
   );
 }
 
-export function Lines({ data, x, series }: { data: Row[]; x: string; series: Series[] }) {
+export function Lines({ data, x, series, percent }: { data: Row[]; x: string; series: Series[]; percent?: boolean }) {
+  const fmt = percent ? (v: number) => `${Math.round(v * 100)}%` : money;
   return (
     <div className="chartbox">
       <ResponsiveContainer>
         <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid stroke="var(--line)" vertical={false} />
           <XAxis dataKey={x} {...axis} />
-          <YAxis {...axis} tickFormatter={money} width={64} />
-          <Tooltip {...tip} />
-          <Legend {...legend} />
+          <YAxis {...axis} tickFormatter={fmt} width={64} domain={percent ? [0, 1] : undefined} />
+          <Tooltip {...tip} formatter={(v: number) => fmt(v)} />
+          {series.length > 1 && <Legend {...legend} />}
           {series.map(s => <Line key={s.key} dataKey={s.key} name={s.label} stroke={s.color} strokeWidth={2} strokeDasharray={s.dashed ? "5 4" : undefined} dot={false} />)}
         </LineChart>
       </ResponsiveContainer>

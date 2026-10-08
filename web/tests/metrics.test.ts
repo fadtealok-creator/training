@@ -4,7 +4,8 @@ import { agingBuckets, buildAlerts, latestMonth, overdueShare, peopleTotals, pnl
 import { money, pct } from "@/lib/format";
 import type { Dataset } from "@/lib/types";
 
-const d = sample as unknown as Dataset;
+const raw = sample as unknown as Dataset;
+const d: Dataset = { ...raw, tables: { ...raw.tables, attendance: [] } };
 
 describe("format", () => {
   it("uses lakh and crore", () => {
@@ -46,5 +47,13 @@ describe("metrics on the sample data", () => {
     expect(alerts.length).toBeGreaterThan(2);
     expect(alerts[0].level).toBe("bad");
     expect(alerts[alerts.length - 1].level).toBe("good");
+    expect(alerts.some(a => a.title.startsWith("Attendance"))).toBe(false);
+  });
+
+  it("flags the branch with low attendance", () => {
+    const row = (id: string, status: "P" | "A", branch: string) => ({ date: "2026-10-01", employee_id: id, name: id, branch, status, in_time: null, out_time: null });
+    const withAtt: Dataset = { ...d, tables: { ...d.tables, attendance: [row("1", "P", "Pune"), row("2", "A", "Pune"), row("3", "P", "Nashik")] } };
+    const a = buildAlerts(withAtt, money, v => pct(v)).find(x => x.title.startsWith("Attendance"));
+    expect(a).toMatchObject({ level: "bad", title: "Attendance in Pune is 50.0%", href: "/people" });
   });
 });

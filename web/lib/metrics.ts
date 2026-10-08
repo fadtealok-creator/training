@@ -1,4 +1,4 @@
-import { BUCKETS, type AgingRow, type Dataset, type PeopleRow, type PnlRow, type SalesLine, type SatisfactionRow } from "./types";
+import { BUCKETS, type AgingRow, type AttendanceRow, type Dataset, type PeopleRow, type PnlRow, type SalesLine, type SatisfactionRow } from "./types";
 
 export const ALL = "all";
 const inRegion = (region: string) => (r: { region: string }) => region === ALL || r.region === region;
@@ -60,6 +60,23 @@ export function latestSatisfaction(rows: SatisfactionRow[]) {
   return { year, rows: rows.filter(r => r.year === year) };
 }
 
+/* Attendance: rate = present / (present + absent + leave); holidays and week-offs don't count. */
+export function attendanceSummary(rows: AttendanceRow[], branch = ALL) {
+  const r = rows.filter(x => branch === ALL || x.branch === branch);
+  const count = (xs: AttendanceRow[], s: AttendanceRow["status"]) => xs.filter(x => x.status === s).length;
+  const rate = (xs: AttendanceRow[]) => { const d = xs.filter(x => x.status !== "H").length; return d ? count(xs, "P") / d : 0; };
+  const dates = uniqSorted(r.map(x => x.date));
+  const people = new Map<string, AttendanceRow[]>();
+  r.forEach(x => people.set(x.employee_id, [...(people.get(x.employee_id) ?? []), x]));
+  return {
+    present: count(r, "P"), absent: count(r, "A"), leave: count(r, "L"), rate: rate(r),
+    employees: people.size, from: dates[0] ?? "", to: dates[dates.length - 1] ?? "",
+    byDate: dates.map(date => ({ date, rate: rate(r.filter(x => x.date === date)) })).filter(d => r.some(x => x.date === d.date && x.status !== "H")),
+    byEmployee: Array.from(people, ([id, xs]) => ({ id, name: xs[0].name, branch: xs[0].branch, present: count(xs, "P"), absent: count(xs, "A"), leave: count(xs, "L"), rate: rate(xs) }))
+      .sort((a, b) => a.rate - b.rate),
+  };
+}
+
 /* Today: things that need the owner's attention, most urgent first. */
 export type Alert = { level: "bad" | "warn" | "good"; title: string; detail: string; href: string };
 export function buildAlerts(d: Dataset, fmt: (n: number) => string, pctFmt: (n: number) => string): Alert[] {
@@ -90,6 +107,13 @@ export function buildAlerts(d: Dataset, fmt: (n: number) => string, pctFmt: (n: 
     const miss = rows.filter(r => r.score < r.target);
     if (miss.length) out.push({ level: "warn", href: "/people",
       title: `Customer satisfaction is under target in ${miss.length} regions`, detail: `${year}: ${miss.map(r => r.region).join(", ")}` });
+  }
+
+  if (d.tables.attendance.length) {
+    const branches = uniqSorted(d.tables.attendance.map(r => r.branch)).map(b => ({ b, a: attendanceSummary(d.tables.attendance, b) })).sort((x, y) => x.a.rate - y.a.rate);
+    const w = branches[0];
+    if (w.a.rate < 0.9) out.push({ level: w.a.rate < 0.8 ? "bad" : "warn", href: "/people",
+      title: `Attendance in ${w.b} is ${pctFmt(w.a.rate)}`, detail: `${w.a.absent} absences between ${w.a.from} and ${w.a.to}` });
   }
 
   const s = salesSummary(sales);

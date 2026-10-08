@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import Nav from "@/components/Nav";
 import "./globals.css";
 
+// Screens read uploaded data on every request, so nothing is prerendered at build time.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Business Desk",
   description: "Sales, collections, finance and people for your business in one place.",
